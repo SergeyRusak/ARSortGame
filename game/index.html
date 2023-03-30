@@ -1,0 +1,346 @@
+
+<html>
+    <head>
+        <style>
+            .buttons{
+                position: fixed;
+                bottom: 0px;
+                left: 0%;
+                
+            }
+            .buttons div{
+                background-color: aquamarine;
+                width: 10vh;
+                height: 10vh;
+        
+            }
+            .buttons div span{
+                position: relative;
+                top:50%;
+                left:20%;
+                font-size: 20pt;
+            }
+            #score{
+                background-color: aquamarine;
+                width: 10vw;
+                height: 20vh;
+                position: fixed;
+                top:0px;
+                left:0px;  
+            }
+            #score span{
+                position: relative;
+                top:50%;
+                left:20%;
+                font-size: 25pt;
+            }
+            #startbutton{
+                background-color: aquamarine;
+                width: 10vw;
+                height: 10vh;
+                position: fixed;
+                bottom:5vh;
+                left:50vw;  
+            }
+            #startbutton span{
+                position: relative;
+                top:25%;
+                left:20%;
+                font-size: 25pt;
+            }
+
+            
+          </style>
+      <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+      <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+      <script>
+      var spawntime = 5000
+      var reduce_spawntime = 100
+      var reduce_sp_counttoreduce = 5
+      var is_started  = false 
+      var is_gameover = false;
+      var life = 5;
+      var score = 0;
+      var drop = false;
+      var sphere = false;
+      var red = false;
+      var green = false;
+      var blue = false;
+      var bgm = new Audio('bgm.mp3');
+      bgm.volume=0.05
+      var lbgm = new Audio('lbgm.mp3')
+      lbgm.volume = 0.05
+      var sfxscore = new Audio('getscore.mp3')
+      var sfxlife  = new Audio('looselife.mp3')
+      var ticker
+      document.addEventListener("DOMContentLoaded",() =>{
+            var startB = document.querySelector("#startbutton") 
+            var game = document.querySelector("#game")
+            var cubeF = document.querySelector("#box_fetch")
+            var sphereF = document.querySelector("#sphere_fetch")
+            var dropG = document.querySelector("#drop_gate")
+            var formG = document.querySelector("#form_gate")
+            var scoreTab = document.querySelector("#score")
+            function updateColor(){
+                console.log(cubeF)
+                let color = "#"+((red)?("ff"):("00"))+((green)?("ff"):("00"))+((blue)?("ff"):("00"));
+                color = (color == "#ffffff")?("#aaaaaa"):((color =="#000000")?("#555555"):(color))
+                cubeF.setAttribute("material","color",color)
+                sphereF.setAttribute("material","color",color)
+            }
+            function updateDrop(){
+                dropG.setAttribute("rotation","0 0 "+((drop)?("180"):("90")))
+            }
+            function updateForm(){
+                console.log(sphere)
+                formG.setAttribute("rotation","0 0 "+((sphere)?("135"):("45")))
+            }
+            function updateScore(){
+                scoreTab.children[0].innerHTML = "Score:"+score+"<br>"+"Life:"+life
+            }
+            var redM = document.querySelector("#redM");
+            var greenM = document.querySelector("#greenM");
+            var blueM = document.querySelector("#blueM");
+            var shapeM = document.querySelector("#shapeM");
+            var dropM = document.querySelector("#dropM");
+            var sp = document.querySelector("#startPoint")
+            
+            game.addEventListener("markerFound",function(){
+                is_started = true
+            })
+            game.addEventListener("markerLost",function(){
+                is_started = false
+            })
+
+            redM.addEventListener("markerFound",function(){
+                red = true
+                updateColor()
+            })
+            redM.addEventListener("markerLost",function(){
+                red = false
+                updateColor()
+            })
+            greenM.addEventListener("markerFound",function(){
+                green = true
+                updateColor()
+            })
+            greenM.addEventListener("markerLost",function(){
+                green = false
+                updateColor()
+            })
+            blueM.addEventListener("markerFound",function(){
+                blue = true
+                updateColor()
+            })
+            blueM.addEventListener("markerLost",function(){
+                blue = false
+                updateColor()
+            })
+            shapeM.addEventListener("markerFound",function(){
+                sphere = true
+                updateForm()
+            })
+            shapeM.addEventListener("markerLost",function(){
+                sphere = false
+                updateForm()
+            })
+            dropM.addEventListener("markerFound",function(){
+                drop = true
+                updateDrop()
+            })
+            dropM.addEventListener("markerLost",function(){
+                drop = false
+                updateDrop()
+            })
+
+            function check(obj_color,obj_form,base_color,base_form){
+                if(is_started){
+                console.log(obj_color, base_color)
+                if(obj_form =='a-torus')
+                {
+                    life = 0
+                    gameover()
+                }
+                else
+                    if(obj_form != base_form){
+                        sfxlife.play()
+                        life -= 1
+                        if (life<= 0) 
+                        {
+                            gameover()
+                        }
+                    }
+                    else
+                        if (obj_color == base_color){
+                            sfxscore.play()
+                            score += 1
+                            }
+                updateScore()
+            }
+        }
+        function gameover(){
+            if(!is_gameover){
+                is_gameover = true
+                    clearInterval(ticker)
+                    console.log("LOSE")
+                    game.children[0].children[0].setAttribute('color','#FF0000')
+                    bgm.pause()
+                    lbgm.play()
+                    sp.innerHTML=""
+                }
+
+        }
+            function generator(gap,sp){
+                let form = (Math.random()>=0.5)?('a-box'):('a-sphere')
+                form = (Math.random()<=0.2)?('a-torus'):(form)
+                let color = "#"+((Math.random()>=0.5)?("FF"):("00"))+((Math.random()>=0.5)?("FF"):("00"))+((Math.random()>=0.5)?("FF"):("00"))
+                var obj = document.createElement(form)
+                    sp.appendChild(obj)
+                    obj.setAttribute('color',color)
+                    obj.setAttribute('scale',"0.5 0.5 0.5")
+                    obj.setAttribute('animation__start',"property:position;from:0 0 0;to:6 0 0;dur:"+gap+";loop:false;easing:linear")
+                    obj.setAttribute('animation__1',"property:position;from:6 0 0;to:10 0 0; startEvents:p1;dur:"+gap+";loop:false;easing:linear")
+                    obj.setAttribute('animation__drop1',"property:position;from:6 0 0;to:6 6 0; startEvents:d1;pauseEvents:pause;resumeEvents:resume;dur:"+gap+";loop:false;easing:linear")
+                    obj.setAttribute('animation__drop2',"property:position;from:6 6 0;to:0 6 0; startEvents:d2;pauseEvents:pause;resumeEvents:resume;dur:"+gap+";loop:false;easing:linear")
+                    obj.setAttribute('animation__drop3',"property:position;from:0 6 0;to:0 0 0; startEvents:d3;pauseEvents:pause;resumeEvents:resume;dur:"+gap+";loop:false;easing:linear")
+                    obj.setAttribute('animation__cube',"property:position;from:10 0 0;to:14 -4.5 0; startEvents:cube;pauseEvents:pause;resumeEvents:resume;dur:"+gap+";loop:false;easing:linear")
+                    obj.setAttribute('animation__sp',"property:position;from:10 0 0;to:14 4.5 0; startEvents:sph;pauseEvents:pause;resumeEvents:resume;dur:"+gap+";loop:false;easing:linear")
+                    
+                    obj.addEventListener("animationcomplete__start",()=>{obj.emit(((drop)?("d1"):("p1")))})
+                    obj.addEventListener("animationcomplete__drop1",()=>{obj.emit("d2")})
+                    obj.addEventListener("animationcomplete__drop2",()=>{obj.emit("d3")})
+                    obj.addEventListener("animationcomplete__drop3",()=>{obj.remove()})
+                    obj.addEventListener("animationcomplete__1",()=>{obj.emit(((sphere)?("sph"):("cube")))})
+                    obj.addEventListener("animationcomplete__sp",()=>{obj.remove();check(obj.getAttribute("color"),form,("#"+((red)?("FF"):("00"))+((green)?("FF"):("00"))+((blue)?("FF"):("00"))),'a-sphere')})
+                    obj.addEventListener("animationcomplete__cube",()=>{obj.remove(); check(obj.getAttribute("color"),form,("#"+((red)?("FF"):("00"))+((green)?("FF"):("00"))+((blue)?("FF"):("00"))),'a-box')})
+
+                    obj.emit("start")
+
+
+                    return obj
+
+            }
+
+            var is_game_started = false
+            startB.addEventListener("click",function(){
+                if(!is_game_started){
+                    updateColor()
+                    updateDrop()
+                    updateForm()
+                    updateScore()
+                    var temptime = 0
+                    var tempcount = 0
+                    function tick(){
+                        temptime += 100
+                        if (temptime >=spawntime){
+                            generator(spawntime,sp)
+                            temptime = 0
+                            tempcount += 1
+                        }
+                        if (tempcount >= reduce_sp_counttoreduce) 
+                        {
+                            spawntime-= reduce_spawntime
+                            tempcount = 0
+                        }
+                    }
+                    bgm.play()
+                    ticker = setInterval(() => {
+                        tick(100)                
+                    }, 100);
+                    is_game_started=true
+                }
+            })
+
+
+            
+            
+
+
+
+
+
+        })
+
+
+
+      </script>
+    </head>
+    <body>
+      <a-scene follow
+      vr-mode-ui="enabled: false;"
+    renderer="logarithmicDepthBuffer: true;"
+    embedded
+    arjs="trackingMethod: best; sourceType: webcam;debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+      >
+
+
+        <a-marker id="game"  type="barcode" value="3">
+          <a-entity scale = "0.2 0.2 0.2">
+            <a-plane color="#ffffff" rotation="-90 0 0 " width="20" height="20">
+                <a-box color="#bbbbbb" width="1.5" height="1.5" position="-9 0 0.5" id ="startPoint">
+                    
+                </a-box>
+
+                <a-entity>
+                    <a-box color="#888888" position="-3.5 0 0.1" scale="10 1.2 0.1"></a-box>
+                    <a-box color="#888888" position="-6 6 0.1" scale="7.2 1.2 0.1"></a-box>
+                    <a-box color="#888888" position="-3 3 0.1" scale="1.2 5 0.1"></a-box>
+                    <a-box color="#888888" position="-9 3 0.1" scale="1.2 5 0.1"></a-box>
+                    <a-box color="#888888" position="3 2 0.1" rotation="0 0 -45" scale="1.2 5 0.1"></a-box>
+                    <a-box color="#888888" position="3 -2 0.1" rotation="0 0 45" scale="1.2 5 0.1"></a-box>
+                </a-entity>
+
+                <a-entity id="drop_gate" position = "-2.2 0.8 0" rotation="0 0 90">
+                    <a-sphere scale="0.1 0.1 2"></a-sphere>
+                    <a-box color="#ff0000" position="0 0.7 0" width="0.2" height="1.7" depth="1.7" rotation="0 0 0"></a-box>
+                </a-entity>
+                
+                <a-entity id="form_gate" position = "1.8 0 0" rotation="0 0 45">
+                    <a-sphere scale="0.1 0.1 2"></a-sphere>
+                    <a-box color="#ff0000" position="0 0.7 0" width="0.2" height="1.7" depth="1.7" rotation="0 0 0"></a-box>
+                </a-entity>    
+
+
+
+                <a-box color="#bbbbbb" position="5 -4 0.5" width="1.7" height="1.7" depth="1.7" rotation="0 0 -45">
+                    <a-box id ="box_fetch" position="2.5 0 2" color="#FF0000" scale="4 4 5"></a-box>
+                </a-box>
+                <a-cylinder color="#bbbbbb" position="5 4 0.5" width="1.7" height="1.7" rotation="0 0 -45">
+                    <a-box  id ="sphere_fetch" position="0 2.5 2" color="#FF0000" scale="4 4 5"></a-box>
+                </a-box>
+
+            </a-plane>
+          </a-entity>  
+          
+        </a-marker>
+
+        
+        <a-marker id="greenM" type="barcode" value="4">
+            <a-box scale="0.5 0.5 0.5" color="#00FF00" ></a-box>
+        </a-marker>
+        <a-marker id="redM" type="barcode" value="5">
+            <a-box scale ="0.5 0.5 0.5" color="#FF0000" ></a-box>
+        </a-marker>
+        <a-marker id="blueM" type="barcode" value="6">
+            <a-box scale="0.5 0.5 0.5" color="#0000ff" ></a-box>
+        </a-marker>
+        <a-marker id="shapeM" type="barcode" value="8">
+            <a-cylinder scale="1 3 1" color="#000000" ></a-box>
+        </a-marker>
+        <a-marker id="dropM" type="barcode" value="9">
+            <a-cylinder scale="1 3 1" color="#0000ff" ></a-box>
+        </a-marker>    
+
+
+        <a-entity camera></a-entity>
+      </a-scene>
+    <div id="score"><span>Score:0</span></div>
+       </div>
+    <div id="startbutton"><span>Start</span></div>
+       </div>
+    </body>
+    <script>
+        
+            
+    </script>
+  </html>
